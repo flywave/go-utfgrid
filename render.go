@@ -51,8 +51,8 @@ func (m *Render) Reset() {
 	C.utfgrid_reset(m.m)
 }
 
-func (m *Render) DrawLine(d KeyData, p1, p2 []float64, width float64) {
-	d.key = rune(C.utfgrid_draw_line(m.m, C.double(p1[0]), C.double(p1[1]), C.double(p2[0]), C.double(p2[1]), C.double(width)))
+func (m *Render) DrawLine(d KeyData, l [][]float64, width float64) {
+	d.key = rune(C.utfgrid_draw_line(m.m, C.double(l[0][0]), C.double(l[0][1]), C.double(l[1][0]), C.double(l[1][1]), C.double(width)))
 	m.keys = append(m.keys, d)
 }
 
@@ -104,12 +104,12 @@ func (m *Render) DrawMultiPolygon(d KeyData, p [][][][]float64) {
 	m.keys = append(m.keys, d)
 }
 
-func (m *Render) DrawEllipse(d KeyData, p1 [2]float64, rx float64, ry float64) {
+func (m *Render) DrawEllipse(d KeyData, p1 []float64, rx float64, ry float64) {
 	d.key = rune(C.utfgrid_draw_ellipse(m.m, C.double(p1[0]), C.double(p1[1]), C.double(rx), C.double(ry)))
 	m.keys = append(m.keys, d)
 }
 
-func (m *Render) DrawCircle(d KeyData, p1 [2]float64, r float64) {
+func (m *Render) DrawCircle(d KeyData, p1 []float64, r float64) {
 	m.DrawEllipse(d, p1, r, r)
 }
 
