@@ -6,13 +6,11 @@
 #include <stdio.h>
 
 #include <iostream>
+#include <memory>
 #include <sstream>
 #include <vector>
-#include <memory>
 
 namespace utfgrid {
-
-enum { width = 256, height = 256 };
 
 void draw_ellipse(agg::grid_rasterizer &ras, double x, double y, double rx,
                   double ry) {
@@ -107,11 +105,10 @@ struct _utfgrid_t {
   std::wstring outbuf;
 };
 
-utfgrid_t *utfgrid_new() {
+utfgrid_t *utfgrid_new(int width, int height) {
   utfgrid_t *m = new utfgrid_t;
-  m->buf = new agg::grid_value[utfgrid::width * utfgrid::height];
-  m->render_buf = new agg::grid_rendering_buffer(
-      m->buf, utfgrid::width, utfgrid::height, utfgrid::width);
+  m->buf = new agg::grid_value[width * height];
+  m->render_buf = new agg::grid_rendering_buffer(m->buf, width, height, width);
   m->renderer = new agg::grid_renderer<agg::span_grid>(*m->render_buf);
   m->err = NULL;
   m->current = 0;
@@ -151,7 +148,7 @@ void utfgrid_reset(utfgrid_t *m) {
 }
 
 wchar_t utfgrid_draw_line(utfgrid_t *m, double x1, double y1, double x2,
-                           double y2, double width) {
+                          double y2, double width) {
   wchar_t key = utfgrid::get_key(m->current++);
   utfgrid::draw_line(m->ras_grid, x1, y1, x2, y2, width);
   m->ras_grid.render(*m->renderer, key);
@@ -166,7 +163,7 @@ wchar_t utfgrid_draw_polygon(utfgrid_t *m, double *points, int count) {
 }
 
 wchar_t utfgrid_draw_ellipse(utfgrid_t *m, double x, double y, double rx,
-                              double ry) {
+                             double ry) {
   wchar_t key = utfgrid::get_key(m->current++);
   utfgrid::draw_ellipse(m->ras_grid, x, y, rx, ry);
   m->ras_grid.render(*m->renderer, key);
@@ -174,7 +171,7 @@ wchar_t utfgrid_draw_ellipse(utfgrid_t *m, double x, double y, double rx,
 }
 
 const char *utfgrid_to_buf(utfgrid_t *m, int *size) {
-  m->outbuf = utfgrid::buf2grid_as_string(4,*m->render_buf);
+  m->outbuf = utfgrid::buf2grid_as_string(4, *m->render_buf);
   *size = m->outbuf.size();
   return reinterpret_cast<const char *>(m->outbuf.c_str());
 }

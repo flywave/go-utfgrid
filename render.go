@@ -29,9 +29,9 @@ type Render struct {
 	keys []KeyData
 }
 
-func New() *Render {
+func New(width, height int) *Render {
 	return &Render{
-		m: C.utfgrid_new(),
+		m: C.utfgrid_new(C.int(width), C.int(height)),
 	}
 }
 
