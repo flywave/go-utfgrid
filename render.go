@@ -89,8 +89,8 @@ func (m *Render) DrawMultiPolygon(d KeyData, p [][][][]float64) {
 	dims := make([]int, len(p))
 	for j := range p {
 		pols[j] = make([][]float64, len(p[j]))
-		sizes[j] = make([]int, len(p))
-		dims[j] = len(p)
+		sizes[j] = make([]int, len(p[j]))
+		dims[j] = len(p[j])
 		for k := range p {
 			pols[j][k] = make([]float64, len(p[j][k])*2)
 			sizes[j][k] = len(p[j][k]) * 2

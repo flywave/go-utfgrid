@@ -14,6 +14,8 @@ namespace utfgrid {
 
 void draw_ellipse(agg::grid_rasterizer &ras, double x, double y, double rx,
                   double ry) {
+  ras.filling_rule(agg::fill_non_zero);
+
   int i;
   ras.move_to_d(x + rx, y);
   for (i = 1; i < 360; i++) {
@@ -24,6 +26,8 @@ void draw_ellipse(agg::grid_rasterizer &ras, double x, double y, double rx,
 
 void draw_line(agg::grid_rasterizer &ras, double x1, double y1, double x2,
                double y2, double width) {
+  ras.filling_rule(agg::fill_non_zero);
+
   double dx = x2 - x1;
   double dy = y2 - y1;
   double d = sqrt(dx * dx + dy * dy);
@@ -42,7 +46,9 @@ void draw_polygon(agg::grid_rasterizer &ras, double **ppoints, int *sizes,
   for (int i = 0; i < count; i++) {
     int size = sizes[i];
     double *points = ppoints[i];
-    if (i > 0) {
+    if (i == 0) {
+      ras.filling_rule(agg::fill_non_zero);
+    } else {
       ras.filling_rule(agg::fill_even_odd);
     }
     for (int p = 0; p < size / 2; p++) {
