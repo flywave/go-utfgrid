@@ -3,7 +3,11 @@
 
 package utfgrid
 
-import "testing"
+import (
+	"bytes"
+	"encoding/json"
+	"testing"
+)
 
 func TestTile(t *testing.T) {
 	utf := LoadUTFGrid("./testdata/utfgrid.json")
@@ -16,5 +20,17 @@ func TestTile(t *testing.T) {
 
 	if len(key) == 0 {
 		t.Error("err")
+	}
+
+	test := "{\"grid\":[\"sss\", \"333\"]}"
+
+	type grid struct {
+		Grid []string `json:"grid"`
+	}
+
+	var g grid
+	err = json.NewDecoder(bytes.NewBuffer([]byte(test))).Decode(&g)
+	if err != nil {
+		t.Error(err)
 	}
 }

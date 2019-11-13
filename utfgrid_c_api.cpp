@@ -51,7 +51,7 @@ void draw_polygon(agg::grid_rasterizer &ras, double *points, int count) {
 std::wstring buf2grid_as_string(int step, agg::grid_rendering_buffer &buf) {
   std::wostringstream s(L"");
 
-  s << "\"grid\":[";
+  s << "{\"grid\":[";
   for (unsigned y = 0; y < buf.height(); y = y + step) {
     agg::grid_value *row = buf.row(y);
     s << "\"";
@@ -69,7 +69,7 @@ std::wstring buf2grid_as_string(int step, agg::grid_rendering_buffer &buf) {
       s << ",";
     }
   }
-  s << "]";
+  s << "]}";
 
   return s.str();
 }
