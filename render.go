@@ -134,7 +134,7 @@ func (m *Render) getBuffer() ([]byte, int) {
 }
 
 func (m *Render) ToUTFGrid() UTFGridTile {
-	var ut UTFGridTile
+	ut := UTFGridTile{Data: make(map[string]map[string]interface{})}
 	for i := range m.keys {
 		key := m.keys[i].ID
 		ut.Keys = append(ut.Keys, key)
