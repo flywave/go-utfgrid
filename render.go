@@ -71,6 +71,10 @@ func (m *Render) DrawEllipse(d KeyData, p1 [2]float64, rx float64, ry float64) {
 	m.keys = append(m.keys, d)
 }
 
+func (m *Render) DrawCircle(d KeyData, p1 [2]float64, r float64) {
+	m.DrawEllipse(d, p1, r, r)
+}
+
 func (m *Render) getBuffer() ([]byte, int) {
 	var size int
 	data := C.GoString(C.utfgrid_to_buf(m.m, (*C.int)(unsafe.Pointer(&size))))
