@@ -1,4 +1,5 @@
 #include "utfgrid_c_api.h"
+#include "geometry_impl.hh"
 
 #include "grid.h"
 #include "renderer.h"
@@ -41,22 +42,19 @@ void draw_line(agg::grid_rasterizer &ras, double x1, double y1, double x2,
   ras.line_to_d(x1 + dx, y1 - dy);
 }
 
-void draw_polygon(agg::grid_rasterizer &ras, double **ppoints, int *sizes,
-                  int count) {
-  for (int i = 0; i < count; i++) {
-    int size = sizes[i];
-    double *points = ppoints[i];
+void draw_polygon(agg::grid_rasterizer &ras, polygon &pol) {
+  for (int i = 0; i < pol.size(); i++) {
     if (i == 0) {
       ras.filling_rule(agg::fill_non_zero);
     } else {
       ras.filling_rule(agg::fill_even_odd);
     }
-    for (int p = 0; p < size / 2; p++) {
-      double *pt = points + (p * 2);
+    linear_ring &r = pol[i];
+    for (int p = 0; p < r.size(); p++) {
       if (p == 0) {
-        ras.move_to_d(pt[0], pt[1]);
+        ras.move_to_d(r[p].x, r[p].y);
       } else {
-        ras.line_to_d(pt[0], pt[1]);
+        ras.line_to_d(r[p].x, r[p].y);
       }
     }
   }
@@ -161,67 +159,85 @@ void utfgrid_reset(utfgrid_t *m) {
   }
 }
 
-wchar_t utfgrid_draw_line(utfgrid_t *m, double x1, double y1, double x2,
-                          double y2, double width) {
-  wchar_t key = utfgrid::get_key(m->current++);
-  utfgrid::draw_line(m->ras_grid, x1, y1, x2, y2, width);
-  m->ras_grid.render(*m->renderer, key);
-  return key;
+void _draw_line(utfgrid_t *m, line &l, double width) {
+  utfgrid::draw_line(m->ras_grid, l.first.x, l.first.y, l.second.x, l.second.y,
+                     width);
 }
 
-wchar_t utfgrid_draw_polygon(utfgrid_t *m, double **points, int *sizes,
-                             int count) {
-  wchar_t key = utfgrid::get_key(m->current++);
-  utfgrid::draw_polygon(m->ras_grid, points, sizes, count);
-  m->ras_grid.render(*m->renderer, key);
-  return key;
+void _draw_polygon(utfgrid_t *m, polygon &pol) {
+  utfgrid::draw_polygon(m->ras_grid, pol);
 }
 
-wchar_t utfgrid_draw_ellipse(utfgrid_t *m, double x, double y, double rx,
-                             double ry) {
-  wchar_t key = utfgrid::get_key(m->current++);
-  utfgrid::draw_ellipse(m->ras_grid, x, y, rx, ry);
-  m->ras_grid.render(*m->renderer, key);
-  return key;
+void _draw_ellipse(utfgrid_t *m, point &p, double rx, double ry) {
+  utfgrid::draw_ellipse(m->ras_grid, p.x, p.y, rx, ry);
 }
 
-wchar_t utfgrid_draw_multi_line(utfgrid_t *m, double *points, int count,
-                                double width) {
-  wchar_t key = utfgrid::get_key(m->current++);
-  for (int i = 0; i < count / 4; i++) {
-    double p1x = points[i];
-    double p1y = points[i + 1];
-    double p2x = points[i + 2];
-    double p2y = points[i + 3];
-    utfgrid::draw_line(m->ras_grid, p1x, p1y, p2x, p2y, width);
+void _draw_multi_line(utfgrid_t *m, std::vector<line> &lines, double width) {
+  for (int i = 0; i < lines.size(); i++) {
+    utfgrid::draw_line(m->ras_grid, lines[i].first.x, lines[i].first.y,
+                       lines[i].second.x, lines[i].second.y, width);
   }
+}
+
+void _draw_multi_polygon(utfgrid_t *m, std::vector<polygon> &polygons) {
+  for (int i = 0; i < polygons.size(); i++) {
+    utfgrid::draw_polygon(m->ras_grid, polygons[i]);
+  }
+}
+
+void _draw_multi_ellipse(utfgrid_t *m, std::vector<point> &points, double rx,
+                         double ry) {
+  for (int i = 0; i < points.size(); i++) {
+    utfgrid::draw_ellipse(m->ras_grid, points[i].x, points[i].y, rx, ry);
+  }
+}
+
+void _draw_collection(utfgrid_t *m, std::vector<_geometry_t> &geometrys,
+                      double *lw, double *pr);
+
+void _draw_geometry(utfgrid_t *m, geometry_t &g, double *lw, double *pr);
+
+wchar_t utfgrid_draw_geometry(utfgrid_t *m, geometry_t *g, double *lw,
+                              double *pr) {
+  wchar_t key = utfgrid::get_key(m->current++);
+  _draw_geometry(m, *g, lw, pr);
   m->ras_grid.render(*m->renderer, key);
   return key;
 }
 
-wchar_t utfgrid_draw_multi_polygon(utfgrid_t *m, double ***points, int **sizes,
-                                   int *dims, int count) {
-  wchar_t key = utfgrid::get_key(m->current++);
-  for (int i = 0; i < count; i++) {
-    int *size = sizes[i];
-    double **ps = points[i];
-    int sdim = dims[i];
-    utfgrid::draw_polygon(m->ras_grid, ps, size, sdim);
+void _draw_geometry(utfgrid_t *m, geometry_t &g, double *lw, double *pr) {
+  switch (g.mode) {
+  case _POINT:
+    _draw_ellipse(m, g.points.front(), *pr, *pr);
+    break;
+  case _MULTIPOINT:
+    _draw_multi_ellipse(m, g.points, *pr, *pr);
+    break;
+  case _LINESTRING:
+    _draw_line(m, g.lines.front(), *lw);
+    break;
+  case _MULTILINESTRING:
+    _draw_multi_line(m, g.lines, *lw);
+    break;
+  case _POLYGON:
+    _draw_polygon(m, g.polygons.front());
+    break;
+  case _MULTIPOLYGON:
+    _draw_multi_polygon(m, g.polygons);
+    break;
+  case _COLLECTION:
+    _draw_collection(m, g.geometrys, lw, pr);
+    break;
+  default:
+    break;
   }
-  m->ras_grid.render(*m->renderer, key);
-  return key;
 }
 
-wchar_t utfgrid_draw_multi_ellipse(utfgrid_t *m, double *points, int count,
-                                   double rx, double ry) {
-  wchar_t key = utfgrid::get_key(m->current++);
-  for (int i = 0; i < count / 2; i++) {
-    double px = points[i * 2];
-    double py = points[i * 2 + 1];
-    utfgrid::draw_ellipse(m->ras_grid, px, py, rx, ry);
+void _draw_collection(utfgrid_t *m, std::vector<_geometry_t> &geometrys,
+                      double *lw, double *pr) {
+  for (int i = 0; i < geometrys.size(); i++) {
+    _draw_geometry(m, geometrys[i], lw, pr);
   }
-  m->ras_grid.render(*m->renderer, key);
-  return key;
 }
 
 const char *utfgrid_to_buf(utfgrid_t *m, int *size) {
