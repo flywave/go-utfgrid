@@ -10,6 +10,7 @@ extern "C" {
 geometry_t *geometry_new(int type) {
   geometry_t *m = new geometry_t;
   m->mode = type;
+  return m;
 }
 
 void geometry_free(geometry_t *m) {
